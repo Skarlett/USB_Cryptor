@@ -55,11 +55,14 @@ Some lower level requirements...
 
         git clone Https//github.com/ixtabinnovations/USB_Cryptor
         cd USB_Cryptor/
+        
         # Install on USB
         sudo ./install.py [TempDirectoryToUse] {/dev/sdXN}
+        
         # Now we can switch to the usb and load the encrypted FS
         cd /media/user/usb/
         sudo ./load.py m ~/usb/ (Mount to Directory)
+        
         # And finally unmount
         sudo ./load.py u
     
