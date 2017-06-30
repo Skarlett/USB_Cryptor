@@ -5,7 +5,7 @@ Currently this project only works on linux like systems.
 It's only been tested on `16.04 Ubuntu | 4.4.0-53-generic`
 
 
-##Features 
+## Features 
 
   - Portable USB Encryption
   
