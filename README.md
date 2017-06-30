@@ -53,15 +53,15 @@ Some lower level requirements...
 
     
 
-    git clone Https//github.com/ixtabinnovations/USB_Cryptor
-    cd USB_Cryptor/
-    \# Install on USB
-    sudo ./install.py [TempDirectoryToUse] {/dev/sdXN}
-    \# Now we can switch to the usb and load the encrypted FS
-    cd /media/user/usb/
-    sudo ./load.py m ~/usb/ (Mount to Directory)
-    \# And finally unmount
-    sudo ./load.py u
+        git clone Https//github.com/ixtabinnovations/USB_Cryptor
+        cd USB_Cryptor/
+        # Install on USB
+        sudo ./install.py [TempDirectoryToUse] {/dev/sdXN}
+        # Now we can switch to the usb and load the encrypted FS
+        cd /media/user/usb/
+        sudo ./load.py m ~/usb/ (Mount to Directory)
+        # And finally unmount
+        sudo ./load.py u
     
 ##### Component Structure
 So how does it all work? The script is designed to automatically make and attempt to inject its own configurations. First, it will identify the device you'd like to use for installation. If multiple USB devices are present, you will be prompted to select one. Otherwise it will choose the only one you have mounted into the machine. If none are present/findable it will return an error and/or message. It will then format the device into `ext4`. Finally it just has to make the file system, keys, and then inject and mount the new filesystem.
