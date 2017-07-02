@@ -7,7 +7,7 @@
 # backup_dev.rip
 
 from cmtab import cmtab
-from os import path, system, getegid, mkdir, remove, walk, removedirs
+from os import path, system, getegid, mkdir, remove, walk, removedirs, getlogin
 from sys import argv
 try:
   from utils import move_file, copy_file, sys
@@ -59,11 +59,13 @@ def mount(mountTo):
   except Exception as e:
     print('No key Found.')
     raise e
-    exit(6)
+    
   
   copy_file(CMTAB_FP, path.join(TARGET, 'cmtab.bak'))
   
   system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(mountTo, ENCRYPTED_DEV, NAME, key_fp).make())
+  system('chown -R %s:%s %s' % (getlogin(), getlogin(), mountTo))
+  system('chmod 0700 %s' % mountTo)
   
   if not path.isdir(mountTo):
     mkdir(mountTo)
@@ -77,17 +79,13 @@ def mount(mountTo):
 def umount():
   if not path.isfile(CMTAB_FP):
     print('Fatal Error of losing cmtab - Attempting recovery...')
-    system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(
-      MOUNTED_TO, ENCRYPTED_DEV,
-      NAME, path.join('/etc/cryptmount/keys/', NAME+'.key')
-      ).make())
-    
-  # try:
-  #   assert system('cryptmount -u '+NAME+' && sync') == 0
-  # except Exception as e:
-  #   print('Device Is busy! Couldn\'t umount.')
-  #   raise e
-  #
+    try:
+      assert system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(
+        MOUNTED_TO, ENCRYPTED_DEV, NAME,
+        path.join('/etc/cryptmount/keys/', NAME+'.key')
+        ).make()) == 0
+    except AssertionError:
+      raise AssertionError('Could not umount encrypted fs')
   mountData = sys('cryptmount -u ' + NAME + ' && sync')
   if 'is not recognized' in mountData:
     assert system('umount /dev/mapper/'+NAME) == 0
