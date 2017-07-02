@@ -37,7 +37,7 @@ try:
   assert path.isfile(INFO_FILE)
 except AssertionError:
   print('Needs backup_dev.rip info file | Otherwise not a BACKUP_DEV')
-  exit(6)
+  exit(1)
 
 
 if path.isfile(path.join(TARGET, 'tempSave.tmp')):
@@ -51,7 +51,8 @@ def mount(mountTo):
     
   except Exception as e:
     print('You might need to install the actual program and convert this USB to load it.')
-  
+    exit()
+ 
   key_fp = path.join('/etc/cryptmount/keys/', NAME+'.key')
 
   try:
