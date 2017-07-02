@@ -1,4 +1,4 @@
-from os import system, getegid, mkdir
+from os import system, mkdir
 from mountutils import *
 from USB import USB
 from raw_format import raw_format
@@ -10,13 +10,13 @@ from utils import *
 from sys import argv
 
 
-
+FILEDIR  = path.dirname(path.abspath(__file__))
 USB_DEVS = set([x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n') if len(x) > 0])
 USB_LIST = []
 for x in USB_DEVS:
   try:
     usb = USB(x)
-    if not usb.data == None:
+    if not usb.data == None and not usb.data.target == FILEDIR:
       USB_LIST.append(usb)
   except AssertionError:
     pass
