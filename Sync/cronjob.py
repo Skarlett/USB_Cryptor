@@ -66,15 +66,13 @@ def main():
       
       with open(path.join(backupTo, 'dirs.lst')) as f:
         for directory in f:
-          if not '#' in directory.strip() and len(directory) > 0:
+          if not '#' in directory.strip() and len(directory) > 0 and not backupTo in directory:
             if directory.strip()[::-1][0] == '/':
-              _temp = [x.strip('\n') for x in directory[::-1][1:][::-1].split('/')[::-1] if len(x) > 0][0]
-              to = path.join(backupTo, _temp)
-            else:
-              to = path.join(backupTo, directory.split('/')[::-1][0])
+              directory = directory.strip()[::-1][1:][::-1]
+              
+            log('copying ' + directory.strip() + ' to ' + backupTo.strip())
+            assert system('rsync -azh %s %s' % (directory.strip(), backupTo.strip() )) == 0
             
-            log('copying ' + directory.strip() + ' to ' + to)
-            assert system('rsync -azh %s %s' % (directory.strip(), to )) == 0
   except Exception as e:
    log('ERROR: '+e.message)
    notify(e.message)
