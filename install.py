@@ -1,4 +1,6 @@
-from os import system, mkdir
+#!/usr/bin/python
+
+from os import system, mkdir, rmdir
 from mountutils import *
 from USB import USB
 from raw_format import raw_format
@@ -31,7 +33,15 @@ def checkInstalled(packageName):
   return sys('dpkg --get-selections | grep '+packageName).replace('install', '').strip() == packageName
 
 
-def main(mountTo, usb=None):
+def main(usb=None):
+  if not usb is None:
+    try:
+      assert not USB(usb).data.target == '/' and \
+             not USB(usb).data.target == FILEDIR
+    except:
+      print 'Cannot mount root directory or current file directory'
+      exit()
+      
   try:
     assert getegid() == 0
   except: print('Needs root privs'); exit(6)
@@ -70,9 +80,10 @@ def main(mountTo, usb=None):
           raise ValueError('Not a number')
       else:
         usbToUse = USB_LIST[0]
-        print('Found only one USB device - Assuming device as '+usbToUse.data.source)
+        print('Found only one USB device - Assuming device as ' + usbToUse.data.source)
+        if not raw_input('Format '+usbToUse.data.source+' and convert to encrypted backup device? [Y/N]: ').lower().startswith('y'):
+          exit()
     else:
-      #print('No USB Flash drive devices found.')
       raise ValueError('No USB Flash drive Devices Found.')
   else:
     usbToUse = usb
@@ -99,15 +110,16 @@ def main(mountTo, usb=None):
   name = ''.join(choice(ascii_letters + digits) for _ in range(12))
   
   
-  # Inject cmtab | copy shit
-  # prepare, map and encrypt
-  
   print('Creating back up of cmtab at '+path.join(usbToUse.data.target, 'cmtab.bak'))
   copy_file('/etc/cryptmount/cmtab', path.join(usbToUse.data.target, 'cmtab.bak'))
   print('Injecting generated cmtab')
-  #with open(, 'w') as f:
-  print path.join(usbToUse.data.target, 'crypto.fs')
-  system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(mountTo, path.join(usbToUse.data.target, 'crypto.fs'), name, path.join('/etc/cryptmount/keys/', name+'.key')).make())
+  
+  tmpdir = path.join('/tmp/', ''.join(choice(ascii_letters + digits) for _ in range(12)))
+  
+  if not path.isdir(tmpdir):
+    mkdir(tmpdir)
+  
+  system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(tmpdir, path.join(usbToUse.data.target, 'crypto.fs'), name, path.join('/etc/cryptmount/keys/', name+'.key')).make())
   
   
   print('creating crypto key, use a 12+ character for moderate security, 20+ for state security, but past 32 has no more effect than 1000 charcters')
@@ -121,36 +133,35 @@ def main(mountTo, usb=None):
   print('Releasing handles...')
   assert system('cryptmount --release ' + name) == 0
   system('sync')
-  print('Moving backup to original Location...')
   
   print('Cloning install files, and tools onto usb')
   for x in additional_files:
     copy_file(x, path.join(usbToUse.data.target, x.split('/')[::-1][0]))
+  
+  print('Moving backup to original Location...')
   move_file(path.join(usbToUse.data.target, 'cmtab.bak'), '/etc/cryptmount/cmtab', True)
   
   print('Adding unique identifier')
-  with open('backup_dev.rip', 'wb') as f:
+  with open(path.join(usbToUse.data.target, 'backup_dev.rip'), 'wb') as f:
     f.write(name)
   
+  rmdir(tmpdir)
   
-  print('Installation complete, now run\n'
-        'python load.py m [directory to mount to](to mount encrypted drive)\n'
-        'python load.py u (to umount encrypted drive)\n\n'
+  print('Installation complete, now run whats below on the device\n'
+        'python load.py m [directory]         | mount\n'
+        'python load.py u                     | umount\n'
         'To safely remove device, ensure encrypted filesystem is unmounted, and then run umount on the device')
-  
+
+
 if __name__ == '__main__':
-  #./ mount dev
-  #./ mount
   if len(argv) > 1:
-    if len(argv) > 2:
-      # ./ mount dev
-      main(*argv[1:])
-    else:
-      # ./ mount
+    if not argv[1] == '-h' and not argv[1] == '--help':
       main(argv[1])
+    else:
+      print(argv[0]+' --help/-h\n'+
+            argv[0]+ '/dev/sdXx\n'+
+            argv[0]
+            )
   else:
-    print(
-''' %s [Directory]
- %s [Directory] [/dev/path/]
-'''.replace('%s', argv[0])
-)
+    main()
+  
