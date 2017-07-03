@@ -14,7 +14,7 @@ def log(data):
   if not data:
     data = 'None'
   with open(LOG_FILE, 'a') as f:
-    f.write('[%s | %s ]: %s ' % (str(time()), str(datetime.now()), str(data)))
+    f.write('[ %s | %s ]: %s \n' % (str(time()), str(datetime.now()), str(data)))
   
 def sys(cmd):
   return Popen(cmd, shell=True, stdout=PIPE).stdout.read()
