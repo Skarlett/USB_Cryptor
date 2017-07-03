@@ -59,7 +59,9 @@ def main():
         exit()
     
       if not path.isfile(path.join(backupTo, 'dirs.lst')):
-        system('echo "# This file is a configuration of which directories you\'d like to backup." > %s' % path.join(backupTo, 'dirs.lst') )
+        system('echo "# This file is a configuration of which directories you\'d like to backup.\n'
+               '# This specific configuration is specific for (as for the moment of this install) \n'
+               '# %s " > %s' % (dev.data.source, path.join(backupTo, 'dirs.lst')))
         system('nano %s' % path.join(backupTo, 'dirs.lst'))
       
       with open(path.join(backupTo, 'dirs.lst')) as f:
@@ -71,11 +73,8 @@ def main():
             else:
               to = path.join(backupTo, directory.split('/')[::-1][0])
             
-            if not path.exists(to):
-              mkdir(to)
-              
             log('copying ' + directory.strip() + ' to ' + to)
-            assert system('rsync -azvh %s %s' % (directory.strip(), to )) == 0
+            assert system('rsync -azh %s %s' % (directory.strip(), to )) == 0
   except Exception as e:
    log('ERROR: '+e.message)
    notify(e.message)
