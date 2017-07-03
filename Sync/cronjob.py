@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from os import walk, system, path, mkdir, getegid
+from os import walk, system, path, getegid
 from subprocess import Popen, PIPE
 from USB import USB
 from datetime import datetime
@@ -71,12 +71,12 @@ def main():
               directory = directory.strip()[::-1][1:][::-1]
               
             log('copying ' + directory.strip() + ' to ' + backupTo.strip())
-            assert system('rsync -azh %s %s' % (directory.strip(), backupTo.strip() )) == 0
+            assert system('rsync -azvh %s %s' % (directory.strip(), backupTo)) == 0
             
   except Exception as e:
-   log('ERROR: '+e.message)
-   notify(e.message)
-   exit()
+    log('ERROR: '+e.message)
+    notify(e.message)
+    exit()
   log('Completed.')
   notify('Backup completed.')
 
