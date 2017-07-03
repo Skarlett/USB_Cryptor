@@ -46,9 +46,8 @@ Some lower level requirements...
 ##### mapscheme:
   
   - \# comment
-  - [Required]
-  - (explaination)
-  - {optional}
+  - [optional]
+  - (Required)
 
 
     
@@ -57,11 +56,13 @@ Some lower level requirements...
         cd USB_Cryptor/
         
         # Install on USB
-        sudo ./install.py [TempDirectoryToUse] {/dev/sdXN}
+        sudo ./install.py [/dev/sdxx]
         
         # Now we can switch to the usb and load the encrypted FS
         cd /media/user/usb/
         sudo ./load.py m ~/usb/ (Mount to Directory)
+        
+        cd ~/usb/ # We're in the encrypted filesystem.
         
         # And finally unmount
         sudo ./load.py u
