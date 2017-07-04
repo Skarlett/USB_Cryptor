@@ -24,12 +24,11 @@ try:
 except:
   CanNotify = False
   log('ERROR: Notifications failed to load')
+  
 
+userInteraction = False
 if path.isfile(path.join(EXTRA_DIR, '.installdirectory')):
   userInteraction = True
-else:
-  userInteraction = False
-
 
 def sys(cmd):
   return Popen(cmd, shell=True, stdout=PIPE).stdout.read()
@@ -67,57 +66,59 @@ def main():
   notify('Backup started.')
   for dev, name in get_backup_dev(): # Get all of our back up devices
     try:
-      enc_dev = USB('/dev/mapper/' + name)
+      enc_dev = USB('/dev/mapper/' + name) # get attributes of the encrypted drive
       
-      if path.isfile(path.join(dev.data.target, 'tempSave.tmp')):
+      if path.isfile(path.join(dev.data.target, 'tempSave.tmp')): # check if application believes mount
         with open(path.join(dev.data.target, 'tempSave.tmp')) as f:
           backupTo = f.read().strip('\n ')
         
-        if not enc_dev.data.target == backupTo:
-          if enc_dev.data.target and not enc_dev.data.target in ['', '/']:
-            backupTo = enc_dev.data.target
+        if not enc_dev.data.target == backupTo: # uh oh - device didn't delete tempSave/tmp
+          if enc_dev.data.target and not enc_dev.data.target in ['', '/']: # Is the encrypted drive mounted?
+            backupTo = enc_dev.data.target # Save us plz
             log('Tempfile and mount location conflict... resolving now.')
             with open(dev.data.target, 'tempSave.tmp') as f:
               f.write(backupTo)
-          else:
-            raise OSError('OS and Application conflict. Application believes it\'s active, while the OS says it is not mounted.\n'
-                          'Fyi, we\'re taking the OS\'s advice - mount the encrypted fs.')
+          
+          else: # No it's not mounted
+            log(name+' Not mounted')
+            raise OSError('Mount the encrypted FS at '+dev.data.target)
         
       else:
-        if enc_dev.data.target and not enc_dev.data.target in ['', '/']:
+        if enc_dev.data.target and not enc_dev.data.target in ['', '/']: # is the encrypted fs mounted?
           
           with open(path.join(dev.data.target, 'tempSave.tmp'), 'w') as f:
             f.write(enc_dev.data.target)
           log('Recovered and reconfigured tempSave.tmp')
+          backupTo = enc_dev.data.target # saved us
           
-        else:
-          raise OSError('No tempSave.tmp file in USB, and '+name+' is not mounted')
+        else: # It's not mounted
+          raise OSError('Mount +'+dev.data.target+' crypto.fs to backup')
     
-      if not path.isfile(path.join(backupTo, 'dirs.lst')):
-        if userInteraction:
+      if not path.isfile(path.join(backupTo, 'dirs.lst')): # mounted but not configured
+        if userInteraction: # hey you there?
           system('echo "# This file is a configuration of which directories you\'d like to backup.\n'
                  '# This specific configuration is specific for (as for the moment of this install) \n'
                  '# %s " > %s' % (dev.data.source, path.join(backupTo, 'dirs.lst')))
           system('nano %s' % path.join(backupTo, 'dirs.lst'))
-        else:
-          notify(enc_dev.data.source+' from '+dev.data.source+' can be auto sync\'ed, but "dirs.lst" wasn\'t found')
-          break
+        else: # senpai notice me
+          raise OSError(enc_dev.data.source+' from '+dev.data.source+' can be auto sync\'ed, but "dirs.lst" wasn\'t found')
           
-      with open(path.join(backupTo, 'dirs.lst')) as f:
+      # Hey we're configured!
+      with open(path.join(backupTo, 'dirs.lst')) as f: # Mwahaha.
         for directory in f:
           if not '#' in directory.strip() and len(directory) > 0 and not backupTo in directory:
-            if directory.strip()[::-1][0] == '/':
+            if directory.strip()[::-1][0] == '/': # Don't give me any bs
               directory = directory.strip()[::-1][1:][::-1]
               
-            log('copying ' + directory.strip() + ' to ' + backupTo.strip())
-            assert system('rsync -azvh %s %s' % (directory.strip(), backupTo)) == 0
+            log('copying ' + directory.strip() + ' to ' + backupTo.strip()) # our very own diary
+            assert system('rsync -azh %s %s' % (directory.strip(), backupTo)) == 0 # Work or else.
     
-      print('Completed '+name+' at /dev/mapper/'+name+'\non USB Device: '+dev.data.source+'\nbacked-up to '+backupTo)
+      log('Completed '+name+' at /dev/mapper/'+name+'\non USB Device: '+dev.data.source+'\nbacked-up to '+backupTo)
       
-    except Exception as e:
-      log('ERROR: '+e.message)
-      notify(e.message)
-    
+    except Exception as e: # Errr... Something happened.
+      log('ERROR: '+e.message) # We'll tell you more about it
+      notify('Error, Check logs at '+LOG_FILE) # We'll even try to get your attention
+     
   log('Completed.')
   notify('Backup completed.')
 
