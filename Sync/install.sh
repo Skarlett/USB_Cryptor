@@ -26,7 +26,7 @@ echo ""
 
 echo "run the following"
 echo ""
-echo 'su -c "echo \"0 * * * * export DISPLAY=:0.0 && export XAUTHORITY=/home/$USER/.Xauthority && sudo -u $USER /usr/bin/python /home/$USER/.rsync_backup/cron/cronjob.py\" >> /var/spool/cron/crontabs/$USER"'
+echo 'su -c "echo \"0 * * * * export DISPLAY=:0.0 && export XAUTHORITY=/home/$USER/.Xauthority && sudo -u $USER /usr/bin/python /home/$USER/.rsync_backup/cron/cronjob.py > /dev/null\" >> /var/spool/cron/crontabs/$USER"'
 echo ""
 echo "Then run."
 echo "python ~/.rsync_backup/cronjob.py"
