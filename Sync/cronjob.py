@@ -66,7 +66,11 @@ def main():
   notify('Backup started.')
   for dev, name in DEVS: # Get all of our back up devices
     try:
-      enc_dev = USB('/dev/mapper/' + name) # get attributes of the encrypted drive
+      try:
+        enc_dev = USB('/dev/mapper/' + name) # get attributes of the encrypted drive
+      except AssertionError:
+        notify('Encrypted FS on '+dev.data.source+' is not mounted. Failed to backup')
+        raise OSError('Could not mount Encryped FS on '+dev.data.source+' located at '+dev.data.target)
       
       if enc_dev.data: # Encrypted FS mounted
         try:
