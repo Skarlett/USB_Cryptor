@@ -64,7 +64,7 @@ def main():
     exit()
   
   notify('Backup started.')
-  for dev, name in get_backup_dev(): # Get all of our back up devices
+  for dev, name in DEVS: # Get all of our back up devices
     try:
       enc_dev = USB('/dev/mapper/' + name) # get attributes of the encrypted drive
       
