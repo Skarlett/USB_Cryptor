@@ -20,7 +20,7 @@ touch ~/.rsync_backup/cron/log.log
 
 chown -R $USER ~/.rsync_backup
 chmod -R 0777 ~/.rsync_backup
-echo "For which user"
+echo "For which user: "
 read USER
 
 echo "setting up cronjob in hourly"
