@@ -1,16 +1,20 @@
 #!/usr/bin/python
-from os import walk, system, path, getegid
+from os import walk, system, path, mkdir
 from subprocess import Popen, PIPE
 from USB import USB
 from datetime import datetime
 from time import time
+from notify2 import init, Notification
 
-
-EXTRA_DIR = '/etc/backup_rsync/'
+EXTRA_DIR = '/home/dw/.rsync_backup'
 LOG_FILE = path.join(EXTRA_DIR, 'log.log')
+init("Auto Backup.")
 
+if not path.isdir(EXTRA_DIR):
+  mkdir(EXTRA_DIR)
 
 def log(data):
+  print data
   if not data:
     data = 'None'
   with open(LOG_FILE, 'a') as f:
@@ -20,8 +24,8 @@ def sys(cmd):
   return Popen(cmd, shell=True, stdout=PIPE).stdout.read()
 
 def notify(message):
-  sys('notify-send Backup_Dev "%s"' % message)
-
+  print message
+  Notification('Auto Backup', message).show()
 
 def get_backup_dev():
   USB_DEVS = [USB(usb) for usb in set(
@@ -34,29 +38,46 @@ def get_backup_dev():
     for usb in USB_DEVS:
       for _, _, files in walk(usb.data.target):
         if 'backup_dev.rip' in files:
-          yield usb
-  else:
-    raise OSError('No backup Dev found')
-
+          with open(path.join(usb.data.target, 'backup_dev.rip')) as f:
+            name = f.read().strip('\n ')
+          yield usb, name
+  
 def main():
   
   log('Starting backup')
+  DEVS = list(get_backup_dev())
+  
+  if not len(DEVS) > 0:
+    log('No devices found')
+    notify('Make sure your Backup device is mounted.')
+    exit()
   
   notify('Backup started.')
-  try:
+  for dev, name in get_backup_dev(): # Get all of our back up devices
     try:
-      assert getegid() == 0
-    except AssertionError:
-      raise AssertionError('Needs to run at root level')
-    
-    for dev in get_backup_dev():
+      enc_dev = USB('/dev/mapper/' + name)
+      
       if path.isfile(path.join(dev.data.target, 'tempSave.tmp')):
         with open(path.join(dev.data.target, 'tempSave.tmp')) as f:
           backupTo = f.read().strip('\n ')
+        
+        if not enc_dev.data.target == backupTo:
+          if enc_dev.data.target and not enc_dev.data.target in ['', '/']:
+            backupTo = enc_dev.data.target
+            log('Tempfile and mount location conflict... resolving now.')
+            with open(dev.data.target, 'tempSave.tmp') as f:
+              f.write(backupTo)
+          else:
+            raise OSError('OS and Application conflict. Application believes it\'s active, while the OS says it is not mounted.\n'
+                          'Fyi, we\'re taking the OS\'s advice - mount the encrypted fs.')
+        
       else:
-        notify('FATAL: no mounted encrypted fs')
-        log('FATAL: no mounted encrypted fs')
-        exit()
+        if enc_dev.data.target and not enc_dev.data.target in ['', '/']:
+          with open(path.join(dev.data.target,'tempSave.tmp'), 'w') as f:
+            f.write(enc_dev.data.target)
+          
+        else:
+          raise OSError('No tempSave.tmp file in USB, '+name+' is not mounted')
     
       if not path.isfile(path.join(backupTo, 'dirs.lst')):
         system('echo "# This file is a configuration of which directories you\'d like to backup.\n'
@@ -72,17 +93,15 @@ def main():
               
             log('copying ' + directory.strip() + ' to ' + backupTo.strip())
             assert system('rsync -azvh %s %s' % (directory.strip(), backupTo)) == 0
-            
-  except Exception as e:
-    log('ERROR: '+e.message)
-    notify(e.message)
-    exit()
+    
+      print('Completed '+name+' at /dev/mapper/'+name+'\non USB Device: '+dev.data.source+'\nbacked-up to '+backupTo)
+      
+    except Exception as e:
+      log('ERROR: '+e.message)
+      notify(e.message)
+    
   log('Completed.')
   notify('Backup completed.')
 
 if __name__ == '__main__':
-  try:
-    assert getegid() == 0
-  except AssertionError:
-    print "Needs root privs"
   main()
