@@ -68,32 +68,18 @@ def main():
     try:
       enc_dev = USB('/dev/mapper/' + name) # get attributes of the encrypted drive
       
-      if path.isfile(path.join(dev.data.target, 'tempSave.tmp')): # check if application believes mount
-        with open(path.join(dev.data.target, 'tempSave.tmp')) as f:
-          backupTo = f.read().strip('\n ')
+      if enc_dev.data: # Encrypted FS mounted
+        try:
+          assert not enc_dev.data.source in ['', '/'] and\
+                 not enc_dev.data.target in ['', '/']
+        except:
+          break
+        backupTo = enc_dev.data.target
         
-        if not enc_dev.data.target == backupTo: # uh oh - device didn't delete tempSave/tmp
-          if enc_dev.data.target and not enc_dev.data.target in ['', '/']: # Is the encrypted drive mounted?
-            backupTo = enc_dev.data.target # Save us plz
-            log('Tempfile and mount location conflict... resolving now.')
-            with open(dev.data.target, 'tempSave.tmp') as f:
-              f.write(backupTo)
-          
-          else: # No it's not mounted
-            log(name+' Not mounted')
-            raise OSError('Mount the encrypted FS at '+dev.data.target)
+      else: # Encrypted FS not mounted
+        raise Exception('Encrypted FS not mounted on '+dev.data.source)
         
-      else:
-        if enc_dev.data.target and not enc_dev.data.target in ['', '/']: # is the encrypted fs mounted?
-          
-          with open(path.join(dev.data.target, 'tempSave.tmp'), 'w') as f:
-            f.write(enc_dev.data.target)
-          log('Recovered and reconfigured tempSave.tmp')
-          backupTo = enc_dev.data.target # saved us
-          
-        else: # It's not mounted
-          raise OSError('Mount +'+dev.data.target+' crypto.fs to backup')
-    
+        
       if not path.isfile(path.join(backupTo, 'dirs.lst')): # mounted but not configured
         if userInteraction: # hey you there?
           system('echo "# This file is a configuration of which directories you\'d like to backup.\n'
