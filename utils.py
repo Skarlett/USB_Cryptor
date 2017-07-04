@@ -60,4 +60,4 @@ def getDevEstimate(dev_path):
   
   return int(round(float(humansize(int(sys('blockdev --getsize64 ' + dev_path).strip()), suffix='MB').split(' ')[0])))-1200
 
-print getDevEstimate('/dev/sdb1')
+# print getDevEstimate('/dev/sdb1')
