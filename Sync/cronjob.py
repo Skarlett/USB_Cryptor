@@ -1,17 +1,14 @@
 #!/usr/bin/python
-from os import walk, system, path, mkdir
+from os import walk, system, path
 from subprocess import Popen, PIPE
 from USB import USB
 from datetime import datetime
 from time import time
 from notify2 import init, Notification
 
-EXTRA_DIR = '/home/dw/.rsync_backup'
+EXTRA_DIR = path.dirname(__file__)
 LOG_FILE = path.join(EXTRA_DIR, 'log.log')
-init("Auto Backup.")
 
-if not path.isdir(EXTRA_DIR):
-  mkdir(EXTRA_DIR)
 
 def log(data):
   print data
@@ -19,13 +16,28 @@ def log(data):
     data = 'None'
   with open(LOG_FILE, 'a') as f:
     f.write('[ %s | %s ]: %s \n' % (str(time()), str(datetime.now()), str(data)))
-  
+
+
+CanNotify = True
+try:
+  init("Auto Backup.")
+except:
+  CanNotify = False
+  log('ERROR: Notifications failed to load')
+
+if path.isfile(path.join(EXTRA_DIR, '.installdirectory')):
+  userInteraction = True
+else:
+  userInteraction = False
+
+
 def sys(cmd):
   return Popen(cmd, shell=True, stdout=PIPE).stdout.read()
 
 def notify(message):
   print message
-  Notification('Auto Backup', message).show()
+  if CanNotify:
+    Notification('Auto Backup', message).show()
 
 def get_backup_dev():
   USB_DEVS = [USB(usb) for usb in set(
@@ -73,18 +85,24 @@ def main():
         
       else:
         if enc_dev.data.target and not enc_dev.data.target in ['', '/']:
-          with open(path.join(dev.data.target,'tempSave.tmp'), 'w') as f:
+          
+          with open(path.join(dev.data.target, 'tempSave.tmp'), 'w') as f:
             f.write(enc_dev.data.target)
+          log('Recovered and reconfigured tempSave.tmp')
           
         else:
-          raise OSError('No tempSave.tmp file in USB, '+name+' is not mounted')
+          raise OSError('No tempSave.tmp file in USB, and '+name+' is not mounted')
     
       if not path.isfile(path.join(backupTo, 'dirs.lst')):
-        system('echo "# This file is a configuration of which directories you\'d like to backup.\n'
-               '# This specific configuration is specific for (as for the moment of this install) \n'
-               '# %s " > %s' % (dev.data.source, path.join(backupTo, 'dirs.lst')))
-        system('nano %s' % path.join(backupTo, 'dirs.lst'))
-      
+        if userInteraction:
+          system('echo "# This file is a configuration of which directories you\'d like to backup.\n'
+                 '# This specific configuration is specific for (as for the moment of this install) \n'
+                 '# %s " > %s' % (dev.data.source, path.join(backupTo, 'dirs.lst')))
+          system('nano %s' % path.join(backupTo, 'dirs.lst'))
+        else:
+          notify(enc_dev.data.source+' from '+dev.data.source+' can be auto sync\'ed, but "dirs.lst" wasn\'t found')
+          break
+          
       with open(path.join(backupTo, 'dirs.lst')) as f:
         for directory in f:
           if not '#' in directory.strip() and len(directory) > 0 and not backupTo in directory:
