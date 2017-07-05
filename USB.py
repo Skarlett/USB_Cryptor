@@ -10,12 +10,12 @@ class USB:
   '''
 
   Depends on findmnt to find source from target and extra information like fs type
-
+  
   '''
   
   def __init__(self, target):
     try:
-      assert path.exists(target) and not path.isfile(target)
+      assert path.exists(target) and not path.isfile(target) # do i even exist?
     except AssertionError:
       raise AssertionError('Needs target (mounted to)')
     if path.isdir(target):
