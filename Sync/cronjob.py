@@ -40,7 +40,7 @@ def notify(message):
 
 def get_backup_dev():
   USB_DEVS = [USB(usb) for usb in set(
-    [x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n') if len(x) > 0])
+    [x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n') if len(x) > 0 and not '*' in x])
               if USB(usb).data]
   
   if len(USB_DEVS) > 0:
