@@ -13,8 +13,10 @@ from sys import argv
 
 
 FILEDIR  = path.dirname(path.abspath(__file__))
-USB_DEVS = set([x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n') if len(x) > 0])
+USB_DEVS = set([x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n')
+                if len(x) > 0 and not '*' in x])
 USB_LIST = []
+
 for x in USB_DEVS:
   try:
     usb = USB(x)
@@ -51,9 +53,9 @@ def main(usb=None):
     print('Installing cryptmount...')
     system('apt-get install -y cryptmount')
   
-  if not path.isdir('/etc/cryptmount/keys'):
-    print('Making our key directory...')
-    mkdir('/etc/cryptmount/keys')
+  # if not path.isdir('/etc/cryptmount/keys'):
+  #   print('Making our key directory...')
+  #   mkdir('/etc/cryptmount/keys')
   
   usbToUse = None
   
@@ -119,7 +121,9 @@ def main(usb=None):
   if not path.isdir(tmpdir):
     mkdir(tmpdir)
   
-  system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(tmpdir, path.join(usbToUse.data.target, 'crypto.fs'), name, path.join('/etc/cryptmount/keys/', name+'.key')).make())
+  system('echo "%s" > /etc/cryptmount/cmtab' %
+         cmtab(tmpdir, path.join(usbToUse.data.target, 'crypto.fs'),
+               name, path.join(usbToUse.data.target, name+'.key')).make())
   
   
   print('creating crypto key, use a 12+ character for moderate security, 20+ for state security, but past 32 has no more effect than 1000 charcters')
@@ -147,9 +151,9 @@ def main(usb=None):
   
   rmdir(tmpdir)
   
-  print('Installation complete, now run whats below on the device\n'
-        'python load.py m [directory]         | mount\n'
-        'python load.py u                     | umount\n'
+  print('Installation complete, now run\n'
+        'python load.py m [directory to mount to](to mount encrypted drive)\n'
+        'python load.py u (to umount encrypted drive)\n'
         'To safely remove device, ensure encrypted filesystem is unmounted, and then run umount on the device')
 
 
