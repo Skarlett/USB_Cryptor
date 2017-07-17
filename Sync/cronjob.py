@@ -40,8 +40,10 @@ def notify(message):
 
 def get_backup_dev():
   USB_DEVS = [USB(usb) for usb in set(
-    [x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n') if len(x) > 0 and not '*' in x])
-              if USB(usb).data]
+    [x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n') if len(x) > 0])
+              if not '*' in usb and USB(usb).data]
+  
+  print USB_DEVS
   
   if len(USB_DEVS) > 0:
     log('Usbs found '+str(USB_DEVS))
@@ -91,7 +93,7 @@ def main():
                  '# %s " > %s' % (dev.data.source, path.join(backupTo, 'dirs.lst')))
           system('nano %s' % path.join(backupTo, 'dirs.lst'))
         else: # senpai notice me
-          raise OSError(enc_dev.data.source+' from '+dev.data.source+' can be auto sync\'ed, but "dirs.lst" wasn\'t found')
+          raise OSError(enc_dev.data.target+' from '+dev.data.source+' can be auto sync\'ed, but "dirs.lst" wasn\'t found')
           
       # Hey we're configured!
       with open(path.join(backupTo, 'dirs.lst')) as f: # Mwahaha.
