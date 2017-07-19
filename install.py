@@ -14,7 +14,7 @@ from sys import argv
 
 FILEDIR  = path.dirname(path.abspath(__file__))
 USB_DEVS = set([x for x in sys("for devlink in /dev/disk/by-id/usb*; do readlink -f ${devlink}; done").split('\n')
-                if len(x) > 0 and not '*' in x])
+                if len(x) > 0])
 USB_LIST = []
 
 for x in USB_DEVS:
@@ -128,7 +128,9 @@ def main(usb=None):
   
   print('creating crypto key, use a 12+ character for moderate security, 20+ for state security, but past 32 has no more effect than 1000 charcters')
   sleep(5)
-  assert system('cryptmount --generate-key 32 ' + name) == 0
+  while 1:
+    if system('cryptmount --generate-key 32 ' + name) == 0:
+      break
   
   print('Prepare dev for cryptmount')
   assert system('cryptmount --prepare ' + name) == 0
