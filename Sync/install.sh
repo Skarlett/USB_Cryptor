@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 apt-get -y install python-dev python-pip libnotify-cil-dev
 python -m pip install notify2
 
@@ -20,18 +20,15 @@ touch ~/.rsync_backup/cron/log.log
 
 chown -R $USER ~/.rsync_backup
 chmod -R 0777 ~/.rsync_backup
-echo "For which user: "
+
+python ~/.rsync_backup/cronjob.py
+
+echo "For which user"
 read USER
 
-echo "setting up cronjob in hourly"
-echo ""
-echo ""
-
-
+echo "To setup autosync"
 echo "run the following"
 echo ""
-echo "su -c \"echo \"0 * * * * export DISPLAY=:0.0 && export XAUTHORITY=/home/$USER/.Xauthority && sudo -u $USER /usr/bin/python /home/$USER/.rsync_backup/cron/cronjob.py > /dev/null\" >> /var/spool/cron/crontabs/$USER\""
+echo "su -c \"echo \"0 * * * * export DISPLAY=:0.0 && export XAUTHORITY=/home/$USER/.Xauthority && sudo -u $USER /usr/bin/python /home/$USER/.rsync_backup/cron/cronjob.py > /dev/null\" >> /var/spool/cron/crontabs/$USER\ && exit\""
 
-echo ""
-echo "Then run."
-echo "python ~/.rsync_backup/cronjob.py"
+
