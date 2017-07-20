@@ -5,6 +5,8 @@ from USB import USB
 from datetime import datetime
 from time import time
 from notify2 import init, Notification
+from sys import exc_info
+from traceback import format_tb
 
 EXTRA_DIR = path.dirname(__file__)
 LOG_FILE = path.join(EXTRA_DIR, 'log.log')
@@ -54,13 +56,15 @@ def get_backup_dev():
           with open(path.join(usb.data.target, 'backup_dev.rip')) as f:
             name = f.read().strip('\n ')
           yield usb, name
+  else:
+    raise AssertionError('No USB devices found.')
   
 def main():
   
   log('Starting backup')
-  DEVS = list(get_backup_dev())
-  
-  if not len(DEVS) > 0:
+  try:
+    DEVS = list(get_backup_dev())
+  except AssertionError:
     log('No devices found')
     notify('Make sure your Backup device is mounted.')
     exit()
@@ -98,7 +102,8 @@ def main():
       # Hey we're configured!
       with open(path.join(backupTo, 'dirs.lst')) as f: # Mwahaha.
         for directory in f:
-          if not '#' in directory.strip() and len(directory) > 0 and not backupTo in directory:
+          if not '#' in directory.strip() and len(directory.strip()) > 0 and not backupTo in directory.strip():
+            print directory
             if directory.strip()[::-1][0] == '/': # Don't give me any bs
               directory = directory.strip()[::-1][1:][::-1]
               
@@ -108,7 +113,11 @@ def main():
       log('Completed '+name+' at /dev/mapper/'+name+'\non USB Device: '+dev.data.source+'\nbacked-up to '+backupTo)
       
     except Exception as e: # Errr... Something happened.
+      type_, value_, traceback_ =exc_info()
+      traceback = format_tb(traceback_)
       log('ERROR: '+e.message) # We'll tell you more about it
+      for t in traceback:
+        log(t)
       notify('Error, Check logs at '+LOG_FILE) # We'll even try to get your attention
      
   log('Completed.')
