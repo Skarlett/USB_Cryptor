@@ -61,15 +61,14 @@ def mount(mountTo):
     print('No key Found.')
     raise e
     
+  if not path.isdir(mountTo):
+    mkdir(mountTo)
   
   copy_file(CMTAB_FP, path.join(TARGET, 'cmtab.bak'))
   
   system('echo "%s" > /etc/cryptmount/cmtab' % cmtab(mountTo, ENCRYPTED_DEV, NAME, key_fp).make())
   system('chown -R %s:%s %s' % (getlogin(), getlogin(), mountTo))
   system('chmod 0700 %s' % mountTo)
-  
-  if not path.isdir(mountTo):
-    mkdir(mountTo)
   
   with open(path.join(TARGET, 'tempSave.tmp'), 'w') as f:
     f.write(mountTo)
